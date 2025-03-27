@@ -1,25 +1,18 @@
-FROM python:3.12
+FROM python:3.13
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-ENV CARGO_HOME=/root/.cargo
-ENV RUSTUP_HOME=/root/.rustup
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-
-ENV PATH="$CARGO_HOME/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y gcc
+
 COPY requirements.txt .
-RUN pip install --upgrade pip setuptools wheel
+RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
-RUN pip install -r requirements.txt
-
-COPY . .
+COPY src/ ./src/
+COPY .env ./
 
 EXPOSE 8000
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
