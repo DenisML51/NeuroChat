@@ -1,0 +1,13 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\.venv",
+    "\\config",
+    "\\docs",
+    "\\src",
+    "\\src\\db",
+    "\\src\\models"
+  ],
+  "SelectedNode": "\\src\\db\\mongo_client.py",
+  "PreviewInSolutionExplorer": false
+}

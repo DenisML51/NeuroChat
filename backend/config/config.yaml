@@ -1,0 +1,14 @@
+# Файл конфигурации приложения
+
+# Конфигурация W&B (замените значения на свои)
+WANDB_ENTITY = "your_wandb_entity"
+WANDB_PROJECT_LLM = "Capybarra-LLM"
+WANDB_PROJECT_APP = "Capybarra-Application"
+
+# Конфигурация модели LLM
+LLM_CONFIG = {
+    "model_name": "gpt2",
+    "seed": 42,
+    "max_length": 50,
+    "num_return_sequences": 1,
+}
