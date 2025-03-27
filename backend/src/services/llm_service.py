@@ -1,21 +1,16 @@
-import time
 import mlflow
 from transformers import pipeline
-
-# Инициализируем pipeline для генерации текста (GPT-2)
 generator = pipeline("text-generation", model="gpt2")
 
-def generate_response(context: str, user_input: str, max_length: int = 150) -> str:
+def generate_response(context: str, user_input: str, max_new_tokens: int = 50) -> str:
     prompt = context + "\nUser: " + user_input + "\nBot:"
-    start_time = time.time()
-    # Запуск MLFlow run для логирования генерации ответа
-    with mlflow.start_run(nested=True):
-        mlflow.log_param("prompt", prompt)
-        mlflow.log_param("max_length", max_length)
-        responses = generator(prompt, max_length=max_length, num_return_sequences=1)
-        generation_time = time.time() - start_time
+    with mlflow.start_run() as run:
+        responses = generator(prompt, max_new_tokens=max_new_tokens, num_return_sequences=1)
         generated_text = responses[0]['generated_text']
         bot_reply = generated_text.split("Bot:")[-1].strip()
-        mlflow.log_metric("generation_time", generation_time)
+        mlflow.log_param("max_new_tokens", max_new_tokens)
+        mlflow.log_param("prompt_length", len(prompt))
         mlflow.log_metric("response_length", len(bot_reply))
+        mlflow.log_text(prompt, "prompt.txt")
+        mlflow.log_text(bot_reply, "bot_reply.txt")
     return bot_reply

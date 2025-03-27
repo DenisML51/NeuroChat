@@ -1,13 +1,60 @@
-import React, { useState } from 'react';
-import { Box, Typography, TextField, Button, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Box, Typography, TextField, Button, keyframes, styled } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AnimatedBackground from '../components/AnimatedBackground';
+
+// Анимации
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const gradientFlow = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+// Стилизованные компоненты
+const GlassCard = styled(Box)(({ theme }) => ({
+  background: 'rgba(255, 255, 255, 0.1)',
+  backdropFilter: 'blur(12px)',
+  borderRadius: '24px',
+  border: '1px solid rgba(255, 255, 255, 0.2)',
+  padding: '40px',
+  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+  animation: `${fadeIn} 0.6s ease-out`,
+}));
+
+const GradientText = styled(Typography)({
+  background: 'linear-gradient(45deg, #00ff88 0%, #61dafb 100%)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  display: 'inline-block',
+  fontWeight: 900,
+});
+
+const HoverButton = styled(Button)({
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 8px 20px rgba(0, 255, 136, 0.3)',
+  },
+});
 
 const Login = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Если токен уже существует, перенаправляем сразу на страницу чата
+  useEffect(() => {
+    if (localStorage.getItem('access_token')) {
+      navigate('/chat');
+    }
+  }, [navigate]);
 
   const handleLogin = async () => {
     try {
@@ -16,11 +63,11 @@ const Login = () => {
       data.append('password', password);
 
       const response = await axios.post('http://localhost:8000/api/auth/login', data, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
+
       localStorage.setItem('access_token', response.data.access_token);
+      // После успешного входа происходит автоматический переход на страницу чата
       navigate('/chat');
     } catch (err) {
       setErrorMsg(err.response?.data?.detail || 'Ошибка при входе');
@@ -28,53 +75,103 @@ const Login = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea, #764ba2)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-      }}
-    >
-      <Paper elevation={6} sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-        <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Вход
-        </Typography>
-        {errorMsg && <Typography color="error" align="center">{errorMsg}</Typography>}
+    <Box sx={{
+      position: 'relative',
+      minHeight: '100vh',
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      p: 2,
+    }}>
+      <AnimatedBackground />
+
+      <GlassCard sx={{
+        width: '100%',
+        maxWidth: '480px',
+        position: 'relative',
+        zIndex: 2,
+      }}>
+        <GradientText variant="h3" align="center" gutterBottom sx={{ mb: 4 }}>
+          Добро пожаловать
+        </GradientText>
+
+        {errorMsg && (
+          <Typography color="error" align="center" sx={{
+            background: 'rgba(255, 50, 50, 0.1)',
+            padding: '12px',
+            borderRadius: '8px',
+            mb: 2,
+            animation: `${fadeIn} 0.3s ease`,
+          }}>
+            {errorMsg}
+          </Typography>
+        )}
+
         <TextField
-          label="Имя пользователя"
           fullWidth
+          label="Имя пользователя"
+          variant="outlined"
           margin="normal"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              color: '#fff',
+              '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+              '&:hover fieldset': { borderColor: '#00ff88' },
+            },
+            '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
+          }}
         />
+
         <TextField
+          fullWidth
           label="Пароль"
           type="password"
-          fullWidth
+          variant="outlined"
           margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              color: '#fff',
+              '& fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
+              '&:hover fieldset': { borderColor: '#00ff88' },
+            },
+            '& .MuiInputLabel-root': { color: 'rgba(255,255,255,0.7)' },
+          }}
         />
-        <Button
-          variant="contained"
+
+        <HoverButton
           fullWidth
           size="large"
           onClick={handleLogin}
-          sx={{ mt: 2, mb: 1 }}
+          sx={{
+            mt: 3,
+            mb: 2,
+            background: 'linear-gradient(45deg, #00ff88 30%, #61dafb 90%)',
+            color: '#000',
+            fontWeight: 'bold',
+            borderRadius: '12px',
+            py: 1.5,
+            fontSize: '1.1rem',
+          }}
         >
           Войти
-        </Button>
+        </HoverButton>
+
         <Button
-          variant="text"
           fullWidth
           onClick={() => navigate('/register')}
+          sx={{
+            color: '#00ff88',
+            '&:hover': { background: 'rgba(0, 255, 136, 0.1)' },
+          }}
         >
-          Зарегистрироваться
+          Нет аккаунта? Создать
         </Button>
-      </Paper>
+      </GlassCard>
     </Box>
   );
 };

@@ -3,17 +3,14 @@ from datetime import datetime, timedelta
 from typing import Optional
 from passlib.context import CryptContext
 import jwt
-
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Depends, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-
 from src.db.mongo_client import get_db
 from src.models import schemas
 
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your_secret_key_here")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
@@ -36,7 +33,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def register_user(user: schemas.UserCreate):
     db = get_db()
     if db.Users.find_one({"username": user.username}) or db.Users.find_one({"email": user.email}):
-        raise HTTPException(status_code=400, detail="User with this username or email already exists")
+        raise HTTPException(status_code=400, detail="Пользователь с таким именем или email уже существует")
     hashed_password = get_password_hash(user.password)
     user_doc = {
         "username": user.username,
@@ -45,7 +42,7 @@ def register_user(user: schemas.UserCreate):
         "created_at": datetime.utcnow().isoformat() + "Z"
     }
     db.Users.insert_one(user_doc)
-    return {"username": user.username, "email": user.email, "created_at": user_doc["created_at"]}
+    return schemas.UserOut(username=user.username, email=user.email, created_at=datetime.utcnow())
 
 def authenticate_user(username: str, password: str):
     db = get_db()
@@ -62,11 +59,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный токен")
     except jwt.PyJWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Недействительный токен")
     db = get_db()
     user_doc = db.Users.find_one({"username": username})
     if user_doc is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return schemas.UserOut(**user_doc)
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    return schemas.UserOut(username=user_doc["username"], email=user_doc["email"], created_at=user_doc["created_at"])

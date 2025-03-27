@@ -25,7 +25,7 @@ class TokenData(BaseModel):
 
 class Message(BaseModel):
     message_id: Optional[str] = Field(None, example="msg_12345")
-    session_id: str = Field(..., example="sess_67890")
+    session_id: Optional[str] = Field(None, example="sess_67890")
     user_id: Optional[str] = Field(None, example="user_001")
     role: str = Field(..., example="user")
     content: str = Field(..., example="Привет, расскажи о MongoDB?")

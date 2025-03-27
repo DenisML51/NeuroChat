@@ -1,6 +1,6 @@
+import mlflow
 from datetime import datetime
 from uuid import uuid4
-import mlflow
 from src.db.mongo_client import get_db
 
 db = get_db()
@@ -9,7 +9,6 @@ def record_metric(metric_data: dict) -> str:
     metric_data["metric_id"] = f"metric_{uuid4().hex}"
     metric_data["timestamp"] = datetime.utcnow().isoformat() + "Z"
     db.MonitoringMetrics.insert_one(metric_data)
-    # Логирование метрик в MLFlow
     with mlflow.start_run(nested=True):
         mlflow.log_param("metric_id", metric_data["metric_id"])
         mlflow.log_metric("cpu_usage", metric_data.get("cpu_usage", 0))

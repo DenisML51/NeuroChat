@@ -9,7 +9,6 @@ def log_event(log_data: dict) -> str:
     log_data["log_id"] = f"log_{uuid4().hex}"
     log_data["timestamp"] = datetime.utcnow().isoformat() + "Z"
     db.Logs.insert_one(log_data)
-    # Логирование события в MLFlow
     with mlflow.start_run(nested=True):
         mlflow.log_param("log_id", log_data["log_id"])
         mlflow.log_param("session_id", log_data.get("session_id", ""))

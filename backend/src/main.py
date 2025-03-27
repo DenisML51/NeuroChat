@@ -1,10 +1,20 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes import router as api_router
-import mlflow
 
-mlflow.set_tracking_uri("http://localhost:5000")
+app = FastAPI(title="LLM Chat API")
 
-app = FastAPI(title="LLM Chat API with MLFlow Logging")
+origins = [
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_router, prefix="/api")
 

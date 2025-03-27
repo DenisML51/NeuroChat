@@ -1,10 +1,20 @@
 import time
 from datetime import datetime
 from uuid import uuid4
-
+from bson import ObjectId
 from src.db.mongo_client import get_db
 
 db = get_db()
+
+def convert_objectid(data):
+    if isinstance(data, dict):
+        return {k: convert_objectid(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [convert_objectid(item) for item in data]
+    elif isinstance(data, ObjectId):
+        return str(data)
+    else:
+        return data
 
 def create_session(session_data: dict) -> str:
     session_data["session_id"] = f"sess_{uuid4().hex}"
@@ -21,16 +31,54 @@ def save_message(message: dict) -> str:
 
 def get_session_messages(session_id: str):
     messages = list(db.Messages.find({"session_id": session_id}).sort("timestamp", 1))
-    return messages
+    return convert_objectid(messages)
 
 def get_chat_context(session_id: str) -> str:
-    """
-    Возвращает историю диалога в виде единого текста.
-    Формат: «User: ...\nBot: ...\nUser: ...»
-    """
     messages = get_session_messages(session_id)
     context_lines = []
     for msg in messages:
         role = "User" if msg.get("role") == "user" else "Bot"
         context_lines.append(f"{role}: {msg.get('content')}")
     return "\n".join(context_lines)
+
+def get_session(session_id: str):
+    session = db.Sessions.find_one({"session_id": session_id})
+    if session:
+        return convert_objectid(session)
+    return session
+
+def list_sessions(username: str):
+    sessions = list(db.Sessions.find({"user_id": username}))
+    sessions = convert_objectid(sessions)
+    transformed = []
+    for sess in sessions:
+        title = sess.get("metadata", {}).get("title", sess.get("session_id"))
+        transformed.append({
+            "session_id": sess.get("session_id"),
+            "title": title,
+            "start_time": sess.get("start_time")
+        })
+    return transformed
+
+def update_session_title(session_id: str, title: str):
+    db.Sessions.update_one(
+        {"session_id": session_id, "metadata.title": {"$exists": False}},
+        {"$set": {"metadata.title": title}}
+    )
+
+
+def delete_session(session_id: str) -> int:
+    """
+    Удаляет сессию из коллекции Sessions.
+    Возвращает количество удалённых документов.
+    """
+    result = db.Sessions.delete_one({"session_id": session_id})
+    return result.deleted_count
+
+def delete_session_messages(session_id: str) -> int:
+    """
+    Удаляет все сообщения, связанные с указанной сессией, из коллекции Messages.
+    Возвращает количество удалённых документов.
+    """
+    result = db.Messages.delete_many({"session_id": session_id})
+    return result.deleted_count
