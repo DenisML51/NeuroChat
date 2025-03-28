@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, TextField, IconButton, CircularProgress } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+import ArrowForwardIosTwoToneIcon from '@mui/icons-material/ArrowForwardIosTwoTone';
 import styled from '@emotion/styled';
 
 const GlassInput = styled(Box)({
@@ -65,7 +65,7 @@ const ChatInput = ({ onSend, isLoading }) => {
         {isLoading ? (
           <CircularProgress size={24} sx={{ color: '#000' }} />
         ) : (
-          <SendIcon />
+          <ArrowForwardIosTwoToneIcon />
         )}
       </IconButton>
     </GlassInput>

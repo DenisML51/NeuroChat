@@ -35,21 +35,26 @@ def get_session_messages(session_id: str):
     return convert_objectid(messages)
 
 
-def get_chat_context(session_id: str) -> List[Dict]:
-    messages = get_session_messages(session_id)[-3:]  # Берем 3 последних сообщения
+def get_chat_context(session_id: str) -> list:
+    """
+    Возвращает список сообщений из сессии.
+    В примере ограничиваемся последними 5 сообщениями.
+    """
+    messages = get_session_messages(session_id)
+    # Допустим, берём только последние 5 сообщений
+    messages = messages[-5:]
+    validated_messages = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        if "role" not in msg or "content" not in msg:
+            continue
+        validated_messages.append({
+            "role": msg["role"],
+            "content": str(msg["content"])[:300]
+        })
+    return validated_messages
 
-    return [
-        {
-            "role": "system",
-            "content": "Ты полезный ассистент. Отвечай кратко на русском."
-        }
-    ] + [
-        {
-            "role": "user" if msg["role"] == "user" else "assistant",
-            "content": msg["content"][:300]  # Обрезаем длинные сообщения
-        }
-        for msg in messages
-    ]
 
 def get_session(session_id: str):
     session = db.Sessions.find_one({"session_id": session_id})
@@ -72,8 +77,9 @@ def list_sessions(username: str):
 
 def update_session_title(session_id: str, title: str):
     db.Sessions.update_one(
-        {"session_id": session_id, "metadata.title": {"$exists": False}},
-        {"$set": {"metadata.title": title}}
+        {"session_id": session_id},
+        {"$set": {"metadata.title": title}},
+        upsert=True  # Добавляем возможность создания поля при отсутствии
     )
 
 
