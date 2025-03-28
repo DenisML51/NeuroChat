@@ -8,21 +8,21 @@ const gradientFlow = keyframes`
 `;
 
 const AnimatedBackground = styled.div`
-  position: fixed;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  background: linear-gradient(-45deg, #0f0f1a, #1a1a2f, #2a1a2f, #1a2f2a);
-  background-size: 400% 400%;
-  animation: ${gradientFlow} 20s ease infinite;
-  
-  &::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(80px);
-  }
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    background: linear-gradient(-45deg, #09090e, #090910, #2a1a2f, #1a2f2a);
+    background-size: 400% 400%;
+    animation: ${gradientFlow} 40s ease infinite;
+
+    &::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backdrop-filter: blur(80px);
+    }
 `;
 
 export default AnimatedBackground;

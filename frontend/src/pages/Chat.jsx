@@ -7,6 +7,7 @@ import ChatWindow from '../components/ChatWindow';
 import ChatInput from '../components/ChatInput';
 import SessionSidebar from '../components/SessionSidebar';
 import AnimatedBackground from '../components/AnimatedBackground';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -35,12 +36,24 @@ const GlassContainer = styled(Container)(({ theme }) => ({
 }));
 
 const Chat = () => {
+  const location = useLocation();
   const [messages, setMessages] = useState([]);
   const [sessionId, setSessionId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [userInfo, setUserInfo] = useState({});
   const accessToken = localStorage.getItem('access_token');
+  const navigate = useNavigate();
+
+  // При монтировании проверяем, передан ли новый sessionId из state
+  useEffect(() => {
+    if (location.state?.newSession) {
+      setSessionId(location.state.newSession);
+      if (location.state.initialMessage) {
+        setMessages([{ role: 'user', content: location.state.initialMessage }]);
+      }
+    }
+  }, [location.state]);
 
   // Получаем данные о пользователе
   useEffect(() => {
@@ -54,6 +67,7 @@ const Chat = () => {
     }
   }, [accessToken]);
 
+  // Загружаем данные сессии, если sessionId установлен
   useEffect(() => {
     if (sessionId) {
       setIsLoading(true);
@@ -121,11 +135,13 @@ const Chat = () => {
           <GradientText variant="h6" sx={{ flexGrow: 1 }}>
             NeuroChat
           </GradientText>
-          <Avatar sx={{ bgcolor: 'rgba(0, 255, 136, 0.3)' }}>
-            <Typography variant="body1" color="#00ff88">
-              AI
-            </Typography>
-          </Avatar>
+          <IconButton onClick={() => navigate('/')}>
+            <Avatar sx={{ bgcolor: 'rgba(0, 255, 136, 0.3)' }}>
+              <Typography variant="body1" color="#00ff88">
+                AI
+              </Typography>
+            </Avatar>
+          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -188,7 +204,6 @@ const Chat = () => {
                 <ChatWindow messages={messages} username={userInfo.username || 'User'} />
                 <Box sx={{ position: 'relative', mt: 2 }}>
                   <ChatInput onSend={handleSend} isLoading={isLoading} />
-
                 </Box>
               </>
             )}

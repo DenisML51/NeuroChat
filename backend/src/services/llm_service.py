@@ -49,7 +49,7 @@ class DollyChatProcessor:
         но мы явно даём понять, что ответ нужен на последний запрос.
         """
         system_instructions = (
-            "You are a helpful assistant. "
+            "You are a helpful AI assistant NeuroChat and vary glad to answer user's questions. "
             "Focus on answering the last user question accurately. "
             "Do not continue the conversation from the user's side, only respond as 'Assistant'."
         )
