@@ -13,7 +13,6 @@ const GlassSidebar = styled(Box)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.1)',
   backdropFilter: 'blur(12px)',
   borderRadius: '24px',
-  // paddingRight: '20px',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRight: '1px solid rgba(255, 255, 255, 0.2)',
   width: 320,
@@ -56,7 +55,6 @@ const SessionSidebar = ({ activeSessionId, onSessionSelect }) => {
   const navigate = useNavigate();
   const accessToken = localStorage.getItem('access_token');
 
-  // Загрузка данных профиля и сессий
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -108,7 +106,6 @@ const SessionSidebar = ({ activeSessionId, onSessionSelect }) => {
 
   return (
     <GlassSidebar>
-      {/* Заголовок профиля */}
       <HeaderBox>
         <Avatar sx={{
           bgcolor: 'rgba(0, 255, 136, 0.3)',
@@ -129,7 +126,6 @@ const SessionSidebar = ({ activeSessionId, onSessionSelect }) => {
         </Box>
       </HeaderBox>
 
-      {/* Заголовок списка сессий с кнопкой создания новой */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <SessionsHeader variant="subtitle1">
           Мои сессии
@@ -148,7 +144,6 @@ const SessionSidebar = ({ activeSessionId, onSessionSelect }) => {
         </Tooltip>
       </Box>
 
-      {/* Список сессий */}
       <List sx={{ flexGrow: 1, overflowY: 'auto' }}>
         <AnimatePresence>
           {sessions.map((sess) => (
@@ -184,14 +179,20 @@ const SessionSidebar = ({ activeSessionId, onSessionSelect }) => {
 
       <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.2)' }} />
 
-      {/* Кнопка выхода */}
       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
         <Tooltip title="Выйти из аккаунта">
           <IconButton
             onClick={handleLogout}
             sx={{
               color: '#00ff88',
-              '&:hover': { background: 'rgba(0, 255, 136, 0.1)' }
+              borderRadius: '12px',
+              padding: '6px 12px',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 255, 136, 0.2)',
+                transform: 'scale(1.02)',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)',
+              }
             }}
           >
             <LogoutIcon sx={{ mr: 1 }} />

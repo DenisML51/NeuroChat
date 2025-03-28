@@ -21,7 +21,6 @@ const GradientText = styled(Typography)({
   fontWeight: 900,
 });
 
-// GlassContainer без абсолютного позиционирования – будет растягиваться на всю ширину родительского фиксированного контейнера.
 const GlassContainer = styled(Container)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.1)',
   backdropFilter: 'blur(12px)',
@@ -40,7 +39,20 @@ const Chat = () => {
   const [sessionId, setSessionId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState({});
   const accessToken = localStorage.getItem('access_token');
+
+  // Получаем данные о пользователе
+  useEffect(() => {
+    if (accessToken) {
+      axios
+        .get('http://localhost:8000/api/auth/me', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        .then((res) => setUserInfo(res.data))
+        .catch((err) => console.error(err));
+    }
+  }, [accessToken]);
 
   useEffect(() => {
     if (sessionId) {
@@ -117,7 +129,6 @@ const Chat = () => {
         </Toolbar>
       </AppBar>
 
-      {/* Фиксированный контейнер для области контента */}
       <Box
         sx={{
           position: 'absolute',
@@ -128,7 +139,6 @@ const Chat = () => {
           overflow: 'hidden',
         }}
       >
-        {/* Сайдбар */}
         <Slide direction="right" in={sidebarOpen} mountOnEnter unmountOnExit>
           <Box
             sx={{
@@ -144,20 +154,18 @@ const Chat = () => {
               activeSessionId={sessionId}
               onSessionSelect={(id) => {
                 setSessionId(id);
-                setSidebarOpen(false);
+                // Сайдбар не закрываем автоматически
               }}
             />
           </Box>
         </Slide>
 
-        {/* Окно чата, правый край фиксирован, ширина изменяется */}
         <Box
           sx={{
             position: 'absolute',
             top: 0,
             bottom: 0,
             right: 0,
-            // Окно чата занимает всю ширину контейнера за вычетом области сайдбара (если открыта)
             width: sidebarOpen ? 'calc(100% - 340px)' : '100%',
             transition: 'width 0.3s ease',
             overflow: 'hidden',
@@ -168,7 +176,7 @@ const Chat = () => {
             sx={{
               height: '100%',
               width: '100%',
-              ml: 'auto', // правый край зафиксирован
+              ml: 'auto',
             }}
           >
             {isLoading && messages.length === 0 ? (
@@ -177,21 +185,10 @@ const Chat = () => {
               </Box>
             ) : (
               <>
-                <ChatWindow messages={messages} />
+                <ChatWindow messages={messages} username={userInfo.username || 'User'} />
                 <Box sx={{ position: 'relative', mt: 2 }}>
-                  <ChatInput onSend={handleSend} />
-                  {isLoading && (
-                    <CircularProgress
-                      size={24}
-                      sx={{
-                        position: 'absolute',
-                        right: 60,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        color: '#00ff88',
-                      }}
-                    />
-                  )}
+                  <ChatInput onSend={handleSend} isLoading={isLoading} />
+
                 </Box>
               </>
             )}

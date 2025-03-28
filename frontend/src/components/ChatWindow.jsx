@@ -16,7 +16,7 @@ const MessageBubble = styled(motion.div)(({ role }) => ({
   alignSelf: role === 'user' ? 'flex-end' : 'flex-start',
 }));
 
-const ChatWindow = ({ messages }) => {
+const ChatWindow = ({ messages, username }) => {
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -62,10 +62,10 @@ const ChatWindow = ({ messages }) => {
                 mr: 1.5,
                 fontSize: '0.8rem'
               }}>
-                {msg.role === 'user' ? '👤' : '🤖'}
+                {msg.role === 'user' ? '👤' : '💻'}
               </Avatar>
               <Typography variant="subtitle2">
-                {msg.role === 'user' ? 'Вы' : 'НейроБот'}
+                {msg.role === 'user' ? username : 'NeuroChat'}
               </Typography>
             </Box>
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>

@@ -41,6 +41,7 @@ const ChatInput = ({ onSend, isLoading }) => {
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         onKeyDown={handleKeyDown}
+        disabled={isLoading}
         InputProps={{
           disableUnderline: true,
           sx: {

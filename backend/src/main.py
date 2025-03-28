@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.routes import router as api_router
 
-app = FastAPI(title="LLM Chat API")
+app = FastAPI(title="NeuroChat Backend")
 
 origins = [
     "http://localhost:3000",

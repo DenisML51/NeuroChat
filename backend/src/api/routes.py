@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from src.models import schemas
 from datetime import datetime
+import gc
 from src.services import auth_service, chat_service, llm_service, logging_service, monitoring_service
 
 router = APIRouter()
@@ -63,8 +64,10 @@ def get_session_history(session_id: str, current_user: schemas.UserOut = Depends
     messages = chat_service.get_session_messages(session_id)
     return {"session_id": session_id, "messages": messages}
 
+
 @router.post("/chat/message", response_model=dict)
 def post_message(message: schemas.Message, current_user: schemas.UserOut = Depends(auth_service.get_current_user)):
+    print('вызов ручки на ответ')
     if not message.session_id:
         session_data = {"user_id": current_user.username, "metadata": {}}
         message.session_id = chat_service.create_session(session_data)
@@ -72,11 +75,15 @@ def post_message(message: schemas.Message, current_user: schemas.UserOut = Depen
         session_doc = chat_service.get_session(message.session_id)
         if not session_doc or session_doc.get("user_id") != current_user.username:
             raise HTTPException(status_code=404, detail="Сессия не найдена")
+
     message.user_id = current_user.username
     user_msg_id = chat_service.save_message(message.dict())
     chat_service.update_session_title(message.session_id, message.content)
+
     context = chat_service.get_chat_context(message.session_id)
-    bot_response_text = llm_service.generate_response(context, message.content)
+
+    bot_response_text, tokens_used = llm_service.generate_response(context)
+
     bot_message = {
         "session_id": message.session_id,
         "user_id": "bot",
@@ -84,13 +91,15 @@ def post_message(message: schemas.Message, current_user: schemas.UserOut = Depen
         "content": bot_response_text,
     }
     bot_msg_id = chat_service.save_message(bot_message)
+
     logging_service.log_event({
         "session_id": message.session_id,
         "message_id": user_msg_id,
         "processing_time": 0.5,
-        "tokens_used": 0,
+        "tokens_used": tokens_used,
         "status": "success"
     })
+
     return {
         "status": "success",
         "user_message_id": user_msg_id,

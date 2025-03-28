@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 import styled from '@emotion/styled';
 
-// Анимации
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -16,7 +15,6 @@ const gradientFlow = keyframes`
   100% { background-position: 0% 50%; }
 `;
 
-// Стилизованные компоненты
 const GlassCard = styled(Box)`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
@@ -60,9 +58,10 @@ const Home = () => {
             fontWeight: 900,
             fontSize: { xs: '2.5rem', md: '4rem' },
             mb: 3,
+
             textShadow: '0 4px 20px rgba(0, 255, 136, 0.3)'
           }}>
-            Новое поколение чат-бота
+            NeuroChat
           </GradientText>
 
           <Typography variant="h5" sx={{
@@ -70,7 +69,7 @@ const Home = () => {
             mb: 4,
             fontSize: { xs: '1.2rem', md: '1.5rem' }
           }}>
-            Искусственный интеллект с глубоким обучением и персонализацией
+            В рамках дисциплины "Управление Данными" в ДВФУ
           </Typography>
 
           <Box sx={{
@@ -115,7 +114,6 @@ const Home = () => {
           </Box>
         </GlassCard>
 
-        {/* Дополнительные элементы дизайна */}
         <Box sx={{
           display: 'flex',
           justifyContent: 'center',
@@ -136,10 +134,10 @@ const Home = () => {
               }
             }}>
               <Typography variant="h6" sx={{ color: '#00ff88', mb: 1.5 }}>
-                Преимущество {item}
+                Описание {item}
               </Typography>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                Уникальные возможности искусственного интеллекта нового поколения
+                Выполнено для демонстрации работы СУБД MongoDB
               </Typography>
             </Box>
           ))}

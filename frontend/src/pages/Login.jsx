@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 
-// Анимации
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -16,7 +15,6 @@ const gradientFlow = keyframes`
   100% { background-position: 0% 50%; }
 `;
 
-// Стилизованные компоненты
 const GlassCard = styled(Box)(({ theme }) => ({
   background: 'rgba(255, 255, 255, 0.1)',
   backdropFilter: 'blur(12px)',
@@ -49,7 +47,6 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Если токен уже существует, перенаправляем сразу на страницу чата
   useEffect(() => {
     if (localStorage.getItem('access_token')) {
       navigate('/chat');
@@ -67,7 +64,6 @@ const Login = () => {
       });
 
       localStorage.setItem('access_token', response.data.access_token);
-      // После успешного входа происходит автоматический переход на страницу чата
       navigate('/chat');
     } catch (err) {
       setErrorMsg(err.response?.data?.detail || 'Ошибка при входе');

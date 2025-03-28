@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 from uuid import uuid4
 from bson import ObjectId
+from typing import List, Dict
 from src.db.mongo_client import get_db
 
 db = get_db()
@@ -33,13 +34,22 @@ def get_session_messages(session_id: str):
     messages = list(db.Messages.find({"session_id": session_id}).sort("timestamp", 1))
     return convert_objectid(messages)
 
-def get_chat_context(session_id: str) -> str:
-    messages = get_session_messages(session_id)
-    context_lines = []
-    for msg in messages:
-        role = "User" if msg.get("role") == "user" else "Bot"
-        context_lines.append(f"{role}: {msg.get('content')}")
-    return "\n".join(context_lines)
+
+def get_chat_context(session_id: str) -> List[Dict]:
+    messages = get_session_messages(session_id)[-3:]  # Берем 3 последних сообщения
+
+    return [
+        {
+            "role": "system",
+            "content": "Ты полезный ассистент. Отвечай кратко на русском."
+        }
+    ] + [
+        {
+            "role": "user" if msg["role"] == "user" else "assistant",
+            "content": msg["content"][:300]  # Обрезаем длинные сообщения
+        }
+        for msg in messages
+    ]
 
 def get_session(session_id: str):
     session = db.Sessions.find_one({"session_id": session_id})
@@ -82,3 +92,4 @@ def delete_session_messages(session_id: str) -> int:
     """
     result = db.Messages.delete_many({"session_id": session_id})
     return result.deleted_count
+
