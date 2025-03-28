@@ -144,7 +144,7 @@ const Home = () => {
           <GradientText variant="h2" gutterBottom sx={{ fontWeight: 900, fontSize: { xs: '2.8rem', md: '4.5rem' }, mb: 3, textAlign: 'center' }}>
             NeuroChat
           </GradientText>
-          <Typography variant="h5" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 4, textAlign: 'center', fontSize: { xs: '1.3rem', md: '1.6rem' }, fontStyle: 'italic', fontWeight: 300 }}>
+          <Typography variant="h5" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 4, textAlign: 'center', fontSize: { xs: '1.3rem', md: '1.6rem' }, fontStyle: 'bold', fontWeight: 300 }}>
             Управление Данными ДВФУ (всё ради MongoDB) :D
           </Typography>
           {isAuth ? (

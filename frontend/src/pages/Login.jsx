@@ -49,7 +49,7 @@ const Login = () => {
 
   useEffect(() => {
     if (localStorage.getItem('access_token')) {
-      navigate('/chat');
+      navigate('/');
     }
   }, [navigate]);
 
@@ -64,7 +64,7 @@ const Login = () => {
       });
 
       localStorage.setItem('access_token', response.data.access_token);
-      navigate('/chat');
+      navigate('/');
     } catch (err) {
       setErrorMsg(err.response?.data?.detail || 'Ошибка при входе');
     }
