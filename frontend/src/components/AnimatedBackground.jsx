@@ -12,7 +12,7 @@ const AnimatedBackground = styled.div`
     width: 100vw;
     height: 100vh;
     z-index: 0;
-    background: linear-gradient(-45deg, #09090e, #090910, #2a1a2f, #1a2f2a);
+    background: linear-gradient(-45deg, #171718, #171718, #171718, #1a2f2a);
     background-size: 400% 400%;
     animation: ${gradientFlow} 40s ease infinite;
 
