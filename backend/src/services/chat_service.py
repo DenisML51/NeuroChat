@@ -36,13 +36,9 @@ def get_session_messages(session_id: str):
 
 
 def get_chat_context(session_id: str) -> list:
-    """
-    Возвращает список сообщений из сессии.
-    В примере ограничиваемся последними 5 сообщениями.
-    """
     messages = get_session_messages(session_id)
-    # Допустим, берём только последние 5 сообщений
-    messages = messages[-5:]
+    # Берём не более 6 последних сообщений
+    messages = messages[-6:]
     validated_messages = []
     for msg in messages:
         if not isinstance(msg, dict):
@@ -51,9 +47,10 @@ def get_chat_context(session_id: str) -> list:
             continue
         validated_messages.append({
             "role": msg["role"],
-            "content": str(msg["content"])[:300]
+            "content": str(msg["content"])[:500]  # ограничим длину до 500 символов
         })
     return validated_messages
+
 
 
 def get_session(session_id: str):
