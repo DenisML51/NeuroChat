@@ -1,18 +1,14 @@
+// Chat.js
 import React, { useState, useEffect } from 'react';
 import { Box, AppBar, Toolbar, IconButton, Typography, Container, Avatar, CircularProgress, Slide } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import axios from 'axios';
-import { styled, keyframes } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import ChatWindow from '../components/ChatWindow';
 import ChatInput from '../components/ChatInput';
 import SessionSidebar from '../components/SessionSidebar';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
 
 const GradientText = styled(Typography)({
   background: 'linear-gradient(45deg, #00ff88 0%, #61dafb 100%)',
@@ -45,17 +41,19 @@ const Chat = () => {
   const accessToken = localStorage.getItem('access_token');
   const navigate = useNavigate();
 
-  // При монтировании проверяем, передан ли новый sessionId из state
   useEffect(() => {
     if (location.state?.newSession) {
       setSessionId(location.state.newSession);
       if (location.state.initialMessage) {
-        setMessages([{ role: 'user', content: location.state.initialMessage }]);
+        setMessages([{ 
+          role: 'user', 
+          content: location.state.initialMessage,
+          isNew: false
+        }]);
       }
     }
   }, [location.state]);
 
-  // Получаем данные о пользователе
   useEffect(() => {
     if (accessToken) {
       axios
@@ -67,7 +65,6 @@ const Chat = () => {
     }
   }, [accessToken]);
 
-  // Загружаем данные сессии, если sessionId установлен
   useEffect(() => {
     if (sessionId) {
       setIsLoading(true);
@@ -75,40 +72,75 @@ const Chat = () => {
         .get(`http://localhost:8000/api/chat/session/${sessionId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
-        .then((res) => setMessages(res.data.messages))
+        .then((res) => {
+          const historicMessages = res.data.messages.map(msg => ({
+            ...msg,
+            isNew: false
+          }));
+          setMessages(historicMessages);
+        })
         .catch((err) => console.error(err))
         .finally(() => setIsLoading(false));
     }
   }, [sessionId, accessToken]);
 
   const handleSend = async (prompt) => {
-    const newUserMessage = { role: 'user', content: prompt };
+    const newUserMessage = { 
+      role: 'user', 
+      content: prompt,
+      isNew: false,
+      timestamp: new Date().toISOString(),
+      status: 'sent'
+    };
     setMessages((prev) => [...prev, newUserMessage]);
-
-    const placeholderMessage = { role: 'bot', content: 'Бот печатает...', isPlaceholder: true };
-    setMessages((prev) => [...prev, placeholderMessage]);
+  
+    const typingMessage = { 
+      role: 'bot', 
+      content: '', 
+      isTyping: true,
+      isNew: false,
+      timestamp: new Date().toISOString()
+    };
+    setMessages((prev) => [...prev, typingMessage]);
     setIsLoading(true);
-
+  
     try {
       const payload = { role: 'user', content: prompt, session_id: sessionId };
       const response = await axios.post('http://localhost:8000/api/chat/message', payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (!sessionId && response.data.session_id) {
-        setSessionId(response.data.session_id);
-      }
+      
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.isPlaceholder
-            ? { role: 'bot', content: response.data.bot_content || 'Ответ не получен' }
+        prev.map(msg => 
+          msg.isTyping 
+            ? { 
+                ...msg, 
+                role: 'bot', 
+                content: response.data.bot_content || 'Ответ не получен', 
+                isTyping: false,
+                isNew: true,
+                timestamp: new Date().toISOString()
+              }
             : msg
         )
       );
+  
+      if (!sessionId && response.data.session_id) {
+        setSessionId(response.data.session_id);
+      }
     } catch (error) {
       console.error('Ошибка отправки сообщения:', error);
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.isPlaceholder ? { role: 'bot', content: 'Ошибка при получении ответа' } : msg
+        prev.map(msg =>
+          msg.isTyping 
+            ? { 
+                role: 'bot', 
+                content: 'Ошибка при получении ответа', 
+                isTyping: false,
+                isNew: true,
+                timestamp: new Date().toISOString()
+              } 
+            : msg
         )
       );
     } finally {
@@ -168,10 +200,7 @@ const Chat = () => {
           >
             <SessionSidebar
               activeSessionId={sessionId}
-              onSessionSelect={(id) => {
-                setSessionId(id);
-                // Сайдбар не закрываем автоматически
-              }}
+              onSessionSelect={(id) => setSessionId(id)}
             />
           </Box>
         </Slide>

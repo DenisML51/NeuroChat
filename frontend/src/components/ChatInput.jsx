@@ -1,3 +1,4 @@
+// ChatInput.jsx (без изменений)
 import React, { useState } from 'react';
 import { Box, TextField, IconButton, CircularProgress } from '@mui/material';
 import ArrowForwardIosTwoToneIcon from '@mui/icons-material/ArrowForwardIosTwoTone';

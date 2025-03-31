@@ -37,7 +37,6 @@ def get_session_messages(session_id: str):
 
 def get_chat_context(session_id: str) -> list:
     messages = get_session_messages(session_id)
-    # Берём не более 6 последних сообщений
     messages = messages[-6:]
     validated_messages = []
     for msg in messages:
@@ -47,7 +46,7 @@ def get_chat_context(session_id: str) -> list:
             continue
         validated_messages.append({
             "role": msg["role"],
-            "content": str(msg["content"])[:500]  # ограничим длину до 500 символов
+            "content": str(msg["content"])[:500]
         })
     return validated_messages
 
@@ -76,23 +75,15 @@ def update_session_title(session_id: str, title: str):
     db.Sessions.update_one(
         {"session_id": session_id},
         {"$set": {"metadata.title": title}},
-        upsert=True  # Добавляем возможность создания поля при отсутствии
+        upsert=True
     )
 
 
 def delete_session(session_id: str) -> int:
-    """
-    Удаляет сессию из коллекции Sessions.
-    Возвращает количество удалённых документов.
-    """
     result = db.Sessions.delete_one({"session_id": session_id})
     return result.deleted_count
 
 def delete_session_messages(session_id: str) -> int:
-    """
-    Удаляет все сообщения, связанные с указанной сессией, из коллекции Messages.
-    Возвращает количество удалённых документов.
-    """
     result = db.Messages.delete_many({"session_id": session_id})
     return result.deleted_count
 

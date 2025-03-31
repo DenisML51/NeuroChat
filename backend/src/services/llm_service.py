@@ -3,11 +3,11 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import logging
 from threading import Lock
 from typing import List, Dict, Tuple
+import re
 
 logger = logging.getLogger(__name__)
 
-
-class DollyChatProcessor:
+class NeuroChatProcessor:
     def __init__(self):
         self.model = None
         self.tokenizer = None
@@ -16,110 +16,92 @@ class DollyChatProcessor:
         self.load_model()
 
     def load_model(self):
-        """
-        Загружаем Dolly v2 3B на CPU (или другую инструкционную модель).
-        """
         try:
-            model_id = "databricks/dolly-v2-3b"
+            model_id = "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
             self.tokenizer = AutoTokenizer.from_pretrained(model_id)
             self.model = AutoModelForCausalLM.from_pretrained(model_id)
+            
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
+                
             self.model.eval()
+            
             self.pipe = pipeline(
                 "text-generation",
                 model=self.model,
                 tokenizer=self.tokenizer,
-                device="cpu"
+                device="cuda" if torch.cuda.is_available() else "cpu",
+                max_new_tokens=50,
+                do_sample=True,
+                temperature=0.4,
+                top_p=0.85,
+                top_k=40,
+                repetition_penalty=1.2,
+                no_repeat_ngram_size=2,
+                eos_token_id=self.tokenizer.eos_token_id,
+                pad_token_id=self.tokenizer.eos_token_id
             )
             return True
         except Exception as e:
             logger.error(f"Model loading error: {str(e)}")
             return False
 
-    def prepare_prompt(self, context_text: str, user_message: str) -> str:
-        """
-        Формируем финальный промпт:
-
-        Context: <сжатая/полная история диалога>
-        User: <текущее сообщение пользователя>
-        Assistant:
-
-        Контекст – скрытая часть, которую модель может использовать,
-        но мы явно даём понять, что ответ нужен на последний запрос.
-        """
-        system_instructions = (
-            "You are a helpful AI assistant NeuroChat and vary glad to answer user's questions. "
-            "Focus on answering the last user question accurately. "
-            "Do not continue the conversation from the user's side, only respond as 'Assistant'."
+    def prepare_prompt(self, messages: List[Dict]) -> str:
+        system_content = (
+            "You are NeuroChat, a helpful AI assistant. "
+            "Follow these rules:\n"
+            "1. Be concise and direct\n"
+            "2. Use the same language as user\n"
+            "3. For simple questions (math, facts) give short answers\n"
+            "4. Format answers clearly\n"
+            "5. Avoid Chinese characters\n"
         )
 
-        # Можно добавить system_instructions в начало, если нужно:
-        prompt = (
-            f"{system_instructions}\n"
-            f"Context: {context_text}\n"
-            f"User: {user_message}\n"
-            "Assistant:"
-        )
-        return prompt
+        if not messages or messages[-1]["role"] != "user":
+            return ""
+
+        formatted_dialog = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg["content"].strip()
+            formatted_dialog.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+        
+        prompt = [
+            "<|im_start|>system",
+            system_content,
+            "<|im_end|>",
+            *formatted_dialog,
+            "<|im_start|>assistant\n"
+        ]
+        
+        return "\n".join(prompt)
+
+    def postprocess_response(self, text: str) -> str:
+        text = re.sub("[\u4e00-\u9FFF]", "", text)
+        text = re.split(r"[\n<]", text)[0]
+        text = re.sub(r"\s+", " ", text).strip()
+        text = re.sub(r"([?.!])$", r"\1", text)
+        return text
 
     def generate_response(self, messages: List[Dict]) -> Tuple[str, int]:
-        """
-        Генерация ответа с учётом предыдущего контекста (в сжатом виде)
-        и последнего сообщения пользователя.
-        """
         with self.lock:
             try:
-                if not messages or not isinstance(messages, list):
-                    return "Invalid chat history format", 0
-
-                # Последнее сообщение должно быть от пользователя
-                if messages[-1]["role"] != "user":
-                    return "No user message to respond to", 0
-
-                # Текущее сообщение (последнее)
-                user_message = messages[-1]["content"].strip()
-                # Формируем контекст (все предыдущие сообщения, кроме последнего)
-                # Можно их суммаризировать или просто склеить
-                context_parts = []
-                for msg in messages[:-1]:
-                    # Можно убрать из контекста часть системных или длинных сообщений,
-                    # либо ограничиться N последними сообщениями
-                    # Но для простоты — просто склеим
-                    role = msg["role"].capitalize()
-                    text = msg["content"].strip()
-                    context_parts.append(f"{role}: {text}")
-                # Склеиваем контекст одной строкой
-                context_text = " ".join(context_parts)
-
-                prompt = self.prepare_prompt(context_text, user_message)
-
-                out = self.pipe(
-                    prompt,
-                    max_new_tokens=150,
-                    do_sample=True,
-                    top_p=0.9,
-                    temperature=0.65,
-                    no_repeat_ngram_size=3,
-                    repetition_penalty=1.5
-                )
-                # Отсекаем сам prompt
-                generated_text = out[0]["generated_text"][len(prompt):]
-                # Если модель начинает генерировать новый "User:", убираем всё после него
-                if "User:" in generated_text:
-                    generated_text = generated_text.split("User:")[0]
-
-                answer = generated_text.strip()
-                # Подсчитываем «условное» количество слов
-                return answer, len(answer.split())
+                prompt = self.prepare_prompt(messages)
+                if not prompt:
+                    return "Invalid conversation format", 0
+                
+                output = self.pipe(prompt)
+                full_text = output[0]["generated_text"]
+                
+                response = full_text[len(prompt):]
+                processed = self.postprocess_response(response)
+                
+                return processed, len(processed.split())
             except Exception as e:
                 logger.error(f"Generation error: {str(e)}")
                 return "Error generating response", 0
 
-
-# Глобальный экземпляр
-chat_processor = DollyChatProcessor()
-
+chat_processor = NeuroChatProcessor()
 
 def generate_response(messages: List[Dict]) -> Tuple[str, int]:
     if not chat_processor.model:

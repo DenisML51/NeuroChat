@@ -67,7 +67,6 @@ def post_message(
         current_user: schemas.UserOut = Depends(auth_service.get_current_user)
 ):
     if not message.session_id:
-        # Создаем новую сессию с метаданными
         session_data = {
             "user_id": current_user.username,
             "metadata": {
@@ -77,12 +76,10 @@ def post_message(
         }
         message.session_id = chat_service.create_session(session_data)
     else:
-        # Проверяем существующую сессию
         session_doc = chat_service.get_session(message.session_id)
         if not session_doc or session_doc.get("user_id") != current_user.username:
             raise HTTPException(status_code=404, detail="Сессия не найдена")
 
-    # Сохраняем сообщение пользователя
     message_data = {
         "session_id": message.session_id,
         "user_id": current_user.username,
@@ -91,11 +88,9 @@ def post_message(
     }
     user_msg_id = chat_service.save_message(message_data)
 
-    # Генерация ответа с учетом истории сессии
     context = chat_service.get_chat_context(message.session_id)
     bot_response_text, tokens_used = llm_service.generate_response(context)
 
-    # Сохраняем ответ бота
     bot_message = {
         "session_id": message.session_id,
         "user_id": "bot",
@@ -104,13 +99,11 @@ def post_message(
     }
     bot_msg_id = chat_service.save_message(bot_message)
 
-    # Обновляем заголовок сессии
     chat_service.update_session_title(
         message.session_id,
         f"{message.content[:30]}..."
     )
 
-    # Логирование
     logging_service.log_event({
         "session_id": message.session_id,
         "message_id": user_msg_id,
