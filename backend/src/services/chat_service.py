@@ -34,7 +34,6 @@ def get_session_messages(session_id: str):
     messages = list(db.Messages.find({"session_id": session_id}).sort("timestamp", 1))
     return convert_objectid(messages)
 
-
 def get_chat_context(session_id: str) -> list:
     messages = get_session_messages(session_id)
     messages = messages[-6:]
@@ -49,8 +48,6 @@ def get_chat_context(session_id: str) -> list:
             "content": str(msg["content"])[:500]
         })
     return validated_messages
-
-
 
 def get_session(session_id: str):
     session = db.Sessions.find_one({"session_id": session_id})
@@ -77,7 +74,6 @@ def update_session_title(session_id: str, title: str):
         {"$set": {"metadata.title": title}},
         upsert=True
     )
-
 
 def delete_session(session_id: str) -> int:
     result = db.Sessions.delete_one({"session_id": session_id})
